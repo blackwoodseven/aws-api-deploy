@@ -12,7 +12,7 @@ var aws = require('aws-sdk'),
 	flattenRequestParameters = require('./flatten-request-parameters'),
 	getOwnerId = require('./get-owner-account-id'),
 	registerAuthorizers = require('./register-authorizers');
-module.exports = function rebuildWebApi(functionName, functionVersion, restApiId, apiConfig, awsRegion, optionalLogger, configCacheStageVar) {
+module.exports = function rebuildWebApi(functionName, functionVersion, functionAlias, restApiId, apiConfig, awsRegion, optionalLogger, configCacheStageVar, deployMessage) {
 	'use strict';
 	var logger = optionalLogger || new NullLogger(),
 		apiGateway = retriableWrap(
@@ -68,7 +68,7 @@ module.exports = function rebuildWebApi(functionName, functionVersion, restApiId
 				type: 'AWS_PROXY',
 				cacheKeyParameters: cacheKeyParameters,
 				integrationHttpMethod: 'POST',
-				uri: 'arn:aws:apigateway:' + awsRegion + ':lambda:path/2015-03-31/functions/arn:aws:lambda:' + awsRegion + ':' + ownerId + ':function:' + functionName + ':${stageVariables.lambdaVersion}/invocations'
+				uri: 'arn:aws:apigateway:' + awsRegion + ':lambda:path/2015-03-31/functions/arn:aws:lambda:' + awsRegion + ':' + ownerId + ':function:' + functionName + ':'+functionVersion+'/invocations'
 			});
 		},
 		corsHeaderValue = function () {
@@ -295,7 +295,7 @@ module.exports = function rebuildWebApi(functionName, functionVersion, restApiId
 		},
 		deployApi = function () {
 			var stageVars = {
-				lambdaVersion: functionVersion
+				lambdaVersion: functionAlias
 			};
 			if (configCacheStageVar) {
 				stageVars[configCacheStageVar] = configHash;
@@ -303,13 +303,14 @@ module.exports = function rebuildWebApi(functionName, functionVersion, restApiId
 
 			return apiGateway.createDeploymentPromise({
 				restApiId: restApiId,
-				stageName: functionVersion,
+				stageName: functionAlias,
+				description: deployMessage,
 				variables: stageVars
 			});
 		},
 		configureAuthorizers = function () {
 			if (apiConfig.authorizers && apiConfig.authorizers !== {}) {
-				return registerAuthorizers(apiConfig.authorizers, restApiId, awsRegion, functionVersion, logger).then(function (result) {
+				return registerAuthorizers(apiConfig.authorizers, restApiId, awsRegion, functionAlias, logger).then(function (result) {
 					authorizerIds = result;
 				});
 			} else {
@@ -331,7 +332,7 @@ module.exports = function rebuildWebApi(functionName, functionVersion, restApiId
 			}
 			return apiGateway.getStagePromise({
 				restApiId: restApiId,
-				stageName: functionVersion
+				stageName: functionAlias
 			}).then(function (stage) {
 				return stage.variables && stage.variables[configCacheStageVar];
 			}).catch(function () {

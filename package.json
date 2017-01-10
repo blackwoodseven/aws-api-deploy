@@ -1,18 +1,18 @@
 {
-  "name": "claudia",
-  "version": "2.5.0",
+  "name": "aws-api-deploy",
+  "version": "1.0.0",
   "description": "Deploy Node.js projects to AWS Lambda and API Gateway easily.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/claudiajs/claudia.git"
+    "url": "https://github.com/blackwoodseven/aws-api-deploy.git"
   },
   "bin": {
-    "claudia": "./bin/cmd.js"
+    "aws-api-deploy": "./bin/cmd.js"
   },
   "main": "index.js",
   "keywords": [
-    "claudia",
+    "aws-api-deploy",
     "aws",
     "lambda",
     "apigateway",
@@ -22,9 +22,9 @@
     "serverless"
   ],
   "bugs": {
-    "url": "https://github.com/claudiajs/claudia/issues"
+    "url": "https://github.com/blackwoodseven/aws-api-deploy/issues"
   },
-  "homepage": "https://github.com/claudiajs/claudia",
+  "homepage": "https://github.com/blackwoodseven/aws-api-deploy",
   "files": [
     "src",
     "logo.png",
@@ -40,7 +40,10 @@
     "test": "node spec/support/jasmine-runner.js",
     "debug": "node debug spec/support/jasmine-runner.js"
   },
-  "author": "Gojko Adzic <gojko@gojko.com> http://gojko.net",
+  "contributors": [
+    { "name": "Guillem Salas", "email" : "guillemsalas@gmail.com" },
+    { "name" : "Péter Nagy", "email" : "peternagyxx@gmail.com" }
+  ],
   "dependencies": {
     "archiver": "^0.21.0",
     "aws-sdk": "^2.7.7",

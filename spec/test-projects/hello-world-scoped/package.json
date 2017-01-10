@@ -1,6 +1,0 @@
-{
-  "name": "@test/hello-world",
-  "version": "1.0.0",
-  "private": true,
-  "files": ["main.js"]
-}

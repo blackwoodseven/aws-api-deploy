@@ -1,5 +1,5 @@
 /*global module, require, console, Promise*/
-var zipdir = require('../tasks/zipdir'),
+const zipdir = require('../tasks/zipdir'),
 	collectFiles = require('../tasks/collect-files'),
 	os = require('os'),
 	path = require('path'),
@@ -61,33 +61,25 @@ module.exports = function update(options, optionalLogger) {
 				console.error(e.stack || e);
 				return Promise.reject('cannot load api config from ' + apiModulePath);
 			}
+			/*
+				Here is where we need to improve the code:
+					* rebuildWebApi for latest stage
+					* if --version is specified, also deploy it there
+					* Bad integration with api.ppostDeployConfig: no need to create endless deployments to setup different stageVariables
+					* what if we completly disable this feature???
+			*/
+			const rebuildInformation = {
+				FunctionName: lambdaConfig.name,
+				FunctionVersion: updateResult.Version,
+				Version: alias,
+				restApiId: apiConfig.id,
+				definition: apiDef,
+				region: lambdaConfig.region,
+				logger,
+				options
+			}
+			return rebuildWebApi(lambdaConfig.name, updateResult.Version, alias, apiConfig.id, apiDef, lambdaConfig.region, logger, options['cache-api-config'], options['message'])
 
-			return rebuildWebApi(lambdaConfig.name, alias, apiConfig.id, apiDef, lambdaConfig.region, logger, options['cache-api-config'])
-				.then(function (rebuildResult) {
-					if (apiModule.postDeploy) {
-						Promise.map = sequentialPromiseMap;
-						return apiModule.postDeploy(
-							options,
-							{
-								name: lambdaConfig.name,
-								alias: alias,
-								apiId: apiConfig.id,
-								apiUrl: updateResult.url,
-								region: lambdaConfig.region,
-								apiCacheReused: rebuildResult.cacheReused
-							},
-							{
-								apiGatewayPromise: apiGateway,
-								aws: aws,
-								Promise: Promise
-							}
-						);
-					}
-				}).then(function (postDeployResult) {
-					if (postDeployResult) {
-						updateResult.deploy = postDeployResult;
-					}
-				});
 		},
 		packageArchive,
 		cleanup = function () {
@@ -139,6 +131,12 @@ module.exports = function update(options, optionalLogger) {
 		if (requiresHandlerUpdate) {
 			functionConfig.Handler = functionConfig.Handler.replace(/\.router$/, '.proxyRouter');
 		}
+		//TODO: There are more configuration changes that can be monitored...
+		// - timeout
+		// - module-api
+		// - vpc settings
+		// - roles
+		// - etc.
 	}).then(function () {
 		if (apiConfig) {
 			return apiGateway.getRestApiPromise({restApiId: apiConfig.id});
@@ -153,6 +151,7 @@ module.exports = function update(options, optionalLogger) {
 		return cleanUpPackage(dir, options, logger);
 	}).then(function () {
 		if (requiresHandlerUpdate) {
+			//TODO: Apply the rest of functionConfig updates
 			return lambda.updateFunctionConfiguration({FunctionName: lambdaConfig.name, Handler: functionConfig.Handler}).promise();
 		}
 	}).then(function () {
@@ -176,11 +175,6 @@ module.exports = function update(options, optionalLogger) {
 			updateResult.s3key = s3Key;
 		}
 		return result;
-	}).then(function (result) {
-		if (options.version) {
-			logger.logStage('setting version alias');
-			return markAlias(result.FunctionName, lambda, result.Version, options.version);
-		}
 	}).then(updateWebApi).then(cleanup);
 };
 module.exports.doc = {
@@ -192,6 +186,12 @@ module.exports.doc = {
 			optional: true,
 			description: 'A version alias to automatically assign to the new deployment',
 			example: 'development'
+		},
+		{
+			argument: 'message',
+			optional: true,
+			description: 'A message to include in the deployment history',
+			example: 'Added new login endpoint'
 		},
 		{
 			argument: 'source',
