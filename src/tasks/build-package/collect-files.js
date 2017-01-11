@@ -6,7 +6,7 @@ var tmpPath = require('../../util/tmp-path'),
 	fs = require('fs'),
 	path = require('path'),
 	localizeDependencies = require('./localize-dependencies'),
-	expectedArchiveName = require('../util/expected-archive-name'),
+	expectedArchiveName = require('./expected-archive-name'),
 	gunzip = require('gunzip-maybe'),
 	tarStream = require('tar-fs');
 
@@ -34,25 +34,37 @@ const copyFiles = (sourcePath, packageConfig) => {
 		})
 }
 
+const installDependencies = (source, target, options) => {
+	if (options['local-dependencies']) {
+		shell.cp('-r', path.join(source, 'node_modules'), target)
+		return Promise.resolve(target)
+	} else if (options['no-optional-dependencies']) {
+		return runNpm(target, 'install --production --no-optional')
+						.then(() => target)
+	} else {
+		return runNpm(target, 'install --production')
+						.then(() => target)
+	}
+}
 
-module.exports = function collectFiles(sourcePath, useLocalDependencies) {
+const rewireRelativeDependencies = (source, target) => {
+	return localizeDependencies(target, source)
+		.then(() => target)
+}
 
-		const installDependencies = function (targetDir) {
-			if (useLocalDependencies) {
-				shell.cp('-r', path.join(sourcePath, 'node_modules'), targetDir);
-				return Promise.resolve(targetDir);
-			} else {
-				return runNpm(targetDir, 'install --production');
-			}
-		},
-		rewireRelativeDependencies = function (targetDir) {
-			return localizeDependencies(targetDir, sourcePath).then(function () {
-				return targetDir;
-			});
-		}
+const moveNpmrc = (source, target) => {
+	const npmrcPath = path.join(source, '.npmrc');
+	if (shell.test('-e', npmrcPath)) {
+		shell.cp(npmrcPath, target);
+	}
+	return target;
+}
 
-	return readJson(path.join(sourcePath, 'package.json')).
-		then(copyFiles).
-		then(rewireRelativeDependencies).
-		then(installDependencies);
+module.exports = (options) => {
+	const source = options.source || shell.pwd()
+	return readJson(path.join(source, 'package.json'))
+		.then( manifest => copyFiles(source, manifest) )
+		.then( target => rewireRelativeDependencies(source, target, options) )
+		.then( target => moveNpmrc(source, target, options) )
+		.then( target => installDependencies(source, target, options) )
 };

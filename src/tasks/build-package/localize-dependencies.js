@@ -1,37 +1,35 @@
 /*global module, require */
-var fs = require('../util/fs-promise'),
-	path = require('path'),
-	shell = require('shelljs'),
-	readjson = require('../util/readjson');
+var path = require('path'),
+		readJson = require('../../util/read-json'),
+		writeJson = require('../../util/write-json')
 
-module.exports = function (workdir, referencedir) {
-	'use strict';
-	var packagePath = path.join(workdir, 'package.json'),
-		isLocalPath = function (str) {
-			// startsWith not available in 0.10
-			return str && (str[0] === '.' || str.indexOf('file:.') === 0);
-		},
-		localize = function (props) {
-			if (!props) {
-				return;
-			}
-			Object.keys(props).forEach(function (key) {
-				if (isLocalPath(props[key])) {
-					props[key] = 'file:' + path.resolve(referencedir, props[key].replace(/^file:/, ''));
-				}
-			});
-		};
-	return readjson(packagePath).then(function (content) {
-		['dependencies', 'devDependencies', 'optionalDependencies'].forEach(function (depType) {
-			localize(content[depType]);
-		});
-		return content;
-	}).then(function (content) {
-		return fs.writeFileAsync(packagePath, JSON.stringify(content), {encoding: 'utf8'});
-	}).then(function () {
-		var npmRcPath = path.join(referencedir, '.npmrc');
-		if (shell.test('-e', npmRcPath)) {
-			shell.cp(npmRcPath, workdir);
-		}
-	});
+const isLocalPath = str => typeof str === 'string' && (str[0] === '.' || str.indexOf('file:.') === 0);
+
+const localize = (refdir, props) => {
+	if (!props) return;
+	Object.keys(props)
+		.filter( key => isLocalPath(props[key]) )
+		.forEach( key => {
+			const oldPath = props[key].replace(/^file:/,''),
+						newPath = path.resolve(refdir, oldPath)
+			props[key] = `file:${newPath}`
+		})
+	return props
+}
+
+const updateDependencies = (refdir, packageConfig) => {
+	[
+		'dependencies',
+		'devDependencies',
+		'optionalDependencies'
+	].forEach( depType => localize(refdir, packageConfig[depType]) )
+
+	return packageConfig
+}
+
+module.exports = (workdir, referencedir) => {
+	const packagePath = path.join(workdir, 'package.json');
+	return readJson(packagePath)
+		.then( packageConfig => updateDependencies(referencedir, packageConfig) )
+		.then( packageConfig => writeJson(packagePath, packageConfig) )
 };
