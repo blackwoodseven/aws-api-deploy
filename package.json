@@ -35,13 +35,11 @@
     "docs"
   ],
   "scripts": {
-    "prepublish": "npm shrinkwrap && node src/util/doc-md.js",
-    "pretest": "jshint src spec && jscs src spec/*.js",
-    "test": "node spec/support/jasmine-runner.js",
-    "debug": "node debug spec/support/jasmine-runner.js"
+    "test": "echo 'no tests!'"
   },
   "contributors": [
     { "name": "Guillem Salas", "email" : "guillemsalas@gmail.com" },
+    { "name": "Marco Somma", "email" : "mak.so1979@gmail.com" },
     { "name" : "Péter Nagy", "email" : "peternagyxx@gmail.com" }
   ],
   "dependencies": {
