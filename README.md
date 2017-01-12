@@ -1,4 +1,4 @@
-# AWS API Deploy
+# Yaarh - Yet Another AWS Rest Helper
 
 Easily deploy and maintain REST API using AWS ApiGateway and AWS Lambda.
 
