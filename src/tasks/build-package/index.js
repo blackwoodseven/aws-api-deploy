@@ -1,5 +1,5 @@
-const collectFiles = require('./collect-files'),
+const preparePackageContent = require('./prepare-package-content'),
       zipDir = require('./zipdir')
 module.exports = options =>
-  collectFiles(options)
+  preparePackageContent(options)
     .then( zipDir )

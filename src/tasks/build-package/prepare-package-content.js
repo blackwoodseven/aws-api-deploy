@@ -5,7 +5,7 @@ var tmpPath = require('../../util/tmp-path'),
 	shell = require('shelljs'),
 	fs = require('fs'),
 	path = require('path'),
-	localizeDependencies = require('./localize-dependencies'),
+	updateLocalDependenciesPath = require('./update-local-dependencies-path'),
 	expectedArchiveName = require('./expected-archive-name'),
 	gunzip = require('gunzip-maybe'),
 	tarStream = require('tar-fs');
@@ -48,7 +48,7 @@ const installDependencies = (source, target, options) => {
 }
 
 const rewireRelativeDependencies = (source, target) => {
-	return localizeDependencies(target, source)
+	return updateLocalDependenciesPath(target, source)
 		.then(() => target)
 }
 
