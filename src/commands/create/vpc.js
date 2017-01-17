@@ -1,5 +1,12 @@
 const AWS = require('aws-sdk')
 
+const enableQuestion = {
+  type: 'confirm',
+  name: 'enable-vpc',
+  default: false,
+  message: 'Do you want to connect to a VPC?'
+}
+
 const getName = Tags => Tags.find( Tag => Tag.Key === 'Name' ).Value
 
 const cleanVpcObject = Vpc => {

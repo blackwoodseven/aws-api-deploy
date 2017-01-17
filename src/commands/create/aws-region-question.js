@@ -14,6 +14,7 @@ const AWS_REGIONS = [
 module.exports = {
   type: 'list',
   choices: AWS_REGIONS,
+  name: 'region',
   default: 'eu-west-1',
   message: 'Select AWS region were you want to deploy the API'
 }

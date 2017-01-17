@@ -1,38 +1,61 @@
 const inquirer = require('inquirer'),
       shell = require('shelljs'),
-      extractCurrentProjectInformation = require('./extract-current-project-information')
+      path = require('path')
+      extractCurrentProjectInformation = require('./extract-current-project-information'),
+      configureSdk = require('../../tasks/configure/aws-sdk'),
+      resolveRole = require('./role')
 
+const resolveSource = options => {
+  const cwd = shell.pwd(),
+        source = options.source != null ? path.resolve(options.source, cwd) : cwd
+  return Object.assign({}, options, { source })
+}
 
-module.exports = options => {
-  options.source = options.source || shell.pwd()
-  return extractCurrentProjectInformation(options)
+const configureAws = options => {
+  if (options.region) {
+    return Promise.resolve(configureSdk(options))
+  }
+  return inquirer.prompt([require('./aws-region-question')])
+    .then( answer => {
+      options = Object.assign({}, options, answer)
+      return configureSdk(options)
+    })
+}
+
+const resolveNames = options =>
+  extractCurrentProjectInformation(options)
     .then( project => {
-      const questions = [
-        {
+      const questions = []
+      if (options['api-name'] == null) {
+        questions.push({
           type: 'input',
-          name: 'apiName',
+          name: 'api-name',
           default: project.name,
           message: 'please specify Api Gateway name'
-        },
-        {
+        })
+      }
+      if (options['function-name'] == null) {
+        questions.push({
           type: 'input',
-          name: 'functionName',
+          name: 'function-name',
           default: project.name,
-          message : 'please specify the name of the Lambda function'
-        },
-        {
-          type: 'confirm',
-          name: 'enableVpc',
-          default: false,
-          message: 'Do you want to connect to a VPC?'
-        },
-        {
-          type: 'confirm',
-          name: 'createNewRole',
-          default: true,
-          message: 'Do you want to create a new role for the lambda?'
-        }
-      ]
+          message : 'please specify the name of the lambda function'
+        })
+      }
+      if (questions.length) {
+        return inquirer.prompt(questions)
+          .then( answers => Object.assign({}, options, answers) )
+      }
+      return options
+    })
+
+module.exports = options => {
+  //ensure source is defined and it is an absolute path
+  return configureAws(resolveSource(options))
+    .then( resolveNames )
+    .then( resolveRole )
+    .then( answers => {
+      console.log(answers)
     })
 }
 

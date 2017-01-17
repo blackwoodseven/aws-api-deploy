@@ -1,6 +1,6 @@
 const shell = require('shelljs'),
 			path = require('path'),
-			readJson = require('../util/read-json')
+			readJson = require('../../util/read-json')
 
 module.exports  = options => {
   const packageConfigPath = path.join(options.source, 'package.json');
