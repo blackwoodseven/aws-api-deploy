@@ -1,4 +1,4 @@
-/*global module, require, Promise */
+w/*global module, require, Promise */
 var aws = require('aws-sdk'),
 	validAuthType = require('../util/valid-auth-type'),
 	sequentialPromiseMap = require('../util/sequential-promise-map'),
