@@ -1,9 +1,10 @@
 const inquirer = require('inquirer'),
       shell = require('shelljs'),
-      path = require('path')
+      path = require('path'),
       extractCurrentProjectInformation = require('./extract-current-project-information'),
       configureSdk = require('../../tasks/configure/aws-sdk'),
-      resolveRole = require('./role')
+      resolveRole = require('./role'),
+      resolveVpc = require('./vpc')
 
 const resolveSource = options => {
   const cwd = shell.pwd(),
@@ -54,9 +55,7 @@ module.exports = options => {
   return configureAws(resolveSource(options))
     .then( resolveNames )
     .then( resolveRole )
-    .then( answers => {
-      console.log(answers)
-    })
+    .then( resolveVpc )
 }
 
 module.exports.commander = {
